@@ -162,6 +162,31 @@
   .lead{font-size:1.14rem;color:#5a4c56;text-align:center;max-width:54ch;margin:0 auto}
   .kicker{text-align:center;margin-bottom:8px}
 
+  /* ---- VSL video ---- */
+  #vsl{padding-bottom:20px}
+  .vsl-poster{display:block;width:100%;max-width:600px;margin:28px auto 0;position:relative;border:none;padding:0;cursor:pointer;
+    border-radius:22px;overflow:hidden;box-shadow:var(--sh-lg);background:var(--plum-deep);aspect-ratio:16/10}
+  .vsl-thumb{width:100%;height:100%;object-fit:cover;object-position:center 22%;display:block}
+  .vsl-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(42,16,36,.15),rgba(42,16,36,.55))}
+  .vsl-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:88px;height:88px;border-radius:50%;
+    background:var(--orchid);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 14px 34px -8px rgba(176,68,126,.7);
+    transition:transform .2s var(--e-out)}
+  .vsl-play svg{width:38px;height:38px;margin-left:5px}
+  .vsl-poster:hover .vsl-play{transform:translate(-50%,-50%) scale(1.08)}
+  .vsl-play::after{content:"";position:absolute;inset:-10px;border-radius:50%;border:2px solid rgba(255,255,255,.5);animation:vslpulse 2.2s var(--e-out) infinite}
+  @keyframes vslpulse{0%{transform:scale(1);opacity:.7}70%{transform:scale(1.35);opacity:0}100%{opacity:0}}
+  .vsl-time{position:absolute;top:16px;right:16px;background:rgba(26,8,21,.8);color:#F6E4EE;font-family:'IBM Plex Mono',monospace;font-size:.82rem;padding:6px 12px;border-radius:100px}
+  .vsl-label{position:absolute;left:22px;bottom:20px;color:#fff;font-weight:800;font-size:1.05rem;text-shadow:0 2px 12px rgba(0,0,0,.5);text-align:left;max-width:70%}
+  @media (prefers-reduced-motion:reduce){.vsl-play::after{animation:none}}
+  .vsl-modal{position:fixed;inset:0;z-index:100;background:rgba(20,6,16,.92);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:22px}
+  .vsl-modal[hidden]{display:none}
+  #vsl[hidden]{display:none}
+  .vsl-frame{width:100%;max-width:900px;aspect-ratio:16/9;border-radius:16px;overflow:hidden;box-shadow:var(--sh-lg);background:#000}
+  .vsl-frame iframe,.vsl-frame video{width:100%;height:100%;border:0;display:block}
+  .vsl-close{position:absolute;top:22px;right:26px;width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;
+    background:rgba(255,255,255,.14);color:#fff;font-size:2rem;line-height:1;display:flex;align-items:center;justify-content:center}
+  .vsl-close:hover{background:rgba(255,255,255,.24)}
+
   /* ---- marquee of platforms ---- */
   .marq-band{background:var(--plum-deep);padding:16px 0;overflow:hidden;position:relative;z-index:2}
   .marq{display:flex;gap:52px;width:max-content;animation:scrollx 26s linear infinite;align-items:center}
@@ -379,6 +404,22 @@
   </div>
 </div>
 
+<!-- VSL VIDEO (auto-hides until VSL_URL is set in the script at the bottom) -->
+<section id="vsl" hidden>
+  <div class="wrap">
+    <div class="kicker r"><span class="eyebrow">Watch first</span></div>
+    <h2 class="sec-h r">The 90-second breakdown</h2>
+    <button class="vsl-poster r-scale" id="vslPlay" aria-label="Play the video">
+      <img src="assets/jess.jpg" alt="Jess explains the system" class="vsl-thumb">
+      <span class="vsl-shade"></span>
+      <span class="vsl-play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+      <span class="vsl-time">1:25</span>
+      <span class="vsl-label">How it works, in your voice</span>
+    </button>
+  </div>
+</section>
+<div class="vsl-modal" id="vslModal" hidden><button class="vsl-close" id="vslClose" aria-label="Close">&times;</button><div class="vsl-frame" id="vslFrame"></div></div>
+
 <!-- PROBLEM -->
 <section>
   <div class="wrap">
@@ -535,6 +576,32 @@
 <script>
 (function(){
   var rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ===== VSL video =====
+     To turn the video on: paste your HeyGen/YouTube/Vimeo/MP4 link between the quotes below. */
+  var VSL_URL = "";
+  (function(){
+    if(!VSL_URL){return;}
+    var sec=document.getElementById('vsl'),modal=document.getElementById('vslModal'),
+        frame=document.getElementById('vslFrame'),play=document.getElementById('vslPlay'),close=document.getElementById('vslClose');
+    if(!sec)return;
+    sec.hidden=false;
+    function embed(){
+      var u=VSL_URL, html='';
+      var yt=u.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
+      var vm=u.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+      if(yt){html='<iframe src="https://www.youtube.com/embed/'+yt[1]+'?autoplay=1&rel=0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>';}
+      else if(vm){html='<iframe src="https://player.vimeo.com/video/'+vm[1]+'?autoplay=1" allow="autoplay; fullscreen" allowfullscreen></iframe>';}
+      else {html='<video src="'+u+'" controls autoplay playsinline></video>';}
+      frame.innerHTML=html;
+    }
+    function open(){modal.hidden=false;embed();document.body.style.overflow='hidden';}
+    function shut(){modal.hidden=true;frame.innerHTML='';document.body.style.overflow='';}
+    play.addEventListener('click',open);
+    close.addEventListener('click',shut);
+    modal.addEventListener('click',function(e){if(e.target===modal)shut();});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!modal.hidden)shut();});
+  })();
 
   // scroll progress
   var prog=document.getElementById('progress');
